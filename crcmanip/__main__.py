@@ -2,6 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from crcmanip.utils import compute_checksum
 from crcmanip.crc import BaseCRC
 
 CRC_FACTORY = {cls.__name__: cls() for cls in BaseCRC.__subclasses__()}
@@ -14,7 +15,7 @@ def parse_args() -> argparse.Namespace:
         "-a",
         "--algorithm",
         choices=list(CRC_FACTORY.keys()),
-        default=list(CRC_FACTORY.keys())[0]
+        default=list(CRC_FACTORY.keys())[0],
     )
     return parser.parse_args()
 
@@ -24,12 +25,7 @@ def main() -> None:
     crc = CRC_FACTORY[args.algorithm]
 
     with args.path.open("rb") as handle:
-        while True:
-            chunk = handle.read(1024 * 1024)
-            if not chunk:
-                break
-            crc.update(chunk)
-            print(".", end="", flush=True, file=sys.stderr)
+        compute_checksum(crc, handle, 0, None)
 
     print(crc.hex_digest())
 
