@@ -7,6 +7,11 @@ from crcmanip.utils import num_to_bytes, swap_endian
 DEFAULT_CHUNK_SIZE = 1024 * 1024
 
 
+class InvalidPositionError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("patch position is located outside available input")
+
+
 def fix_start_end_pos(
     start_pos: T.Optional[int], end_pos: T.Optional[int], handle: T.IO[bytes]
 ) -> T.Tuple[int, int]:
@@ -75,6 +80,9 @@ def compute_patch(
 ) -> int:
     handle.seek(0, io.SEEK_END)
     orig_file_size = handle.tell()
+    if target_pos < 0 or target_pos > orig_file_size:
+        raise InvalidPositionError
+
     if overwrite:
         target_file_size = orig_file_size
         if target_pos + crc.num_bytes > orig_file_size:
@@ -130,6 +138,9 @@ def apply_patch(
     end_pos = input_handle.tell()
     input_handle.seek(0, io.SEEK_SET)
     pos = input_handle.tell()
+
+    if target_pos < 0 or target_pos > end_pos:
+        raise InvalidPositionError
 
     # output first half
     while pos < target_pos:
