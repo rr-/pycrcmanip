@@ -88,6 +88,11 @@ class BaseCRC:
         self._value = self.initial_xor
         self._consumed = 0
 
+    def reset(self, raw_value: T.Optional[int] = None) -> "BaseCRC":
+        self._value = raw_value if raw_value is not None else self.initial_xor
+        self._consumed = 0
+        return self
+
     def update(self, source: bytes) -> "BaseCRC":
         self._value = self.get_next_value(source, self._value) & (
             (1 << self.num_bits) - 1
@@ -125,6 +130,10 @@ class BaseCRC:
 
     def get_next_value(self, source: bytes, value: int) -> int:
         return T.cast(int, crc_next(self, source, value))
+
+    @property
+    def raw_value(self) -> int:
+        return self._value
 
 
 class CRC32(BaseCRC):

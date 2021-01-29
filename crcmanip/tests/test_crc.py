@@ -1,3 +1,5 @@
+import typing as T
+
 import pytest
 
 from crcmanip.crc import (
@@ -11,7 +13,7 @@ from crcmanip.crc import (
 
 
 @pytest.mark.parametrize(
-    "crc,test_string,expected_digest",
+    "crc_cls,test_string,expected_digest",
     [
         (CRC32, b"123456789", 0xCBF43926),
         (CRC32POSIX, b"123456789", 0x377A6011),
@@ -21,13 +23,14 @@ from crcmanip.crc import (
     ],
 )
 def test_update(
-    crc: BaseCRC, test_string: bytes, expected_digest: int
+    crc_cls: T.Type[BaseCRC], test_string: bytes, expected_digest: int
 ) -> None:
-    assert crc().update(test_string).digest() == expected_digest
+    actual_digest = crc_cls().update(test_string).digest()
+    assert actual_digest == expected_digest
 
 
 @pytest.mark.parametrize(
-    "crc,test_string,expected_digest",
+    "crc_cls,test_string,expected_digest",
     [
         (CRC32, b"123456789", 0x9A7AC8DB),
         (CRC32POSIX, b"123456789", 0x6041BEBA),
@@ -37,6 +40,7 @@ def test_update(
     ],
 )
 def test_reverse_update(
-    crc: BaseCRC, test_string: bytes, expected_digest: int
+    crc_cls: T.Type[BaseCRC], test_string: bytes, expected_digest: int
 ) -> None:
-    assert crc().update_reverse(test_string).digest() == expected_digest
+    actual_digest = crc_cls().update_reverse(test_string).digest()
+    assert actual_digest == expected_digest
