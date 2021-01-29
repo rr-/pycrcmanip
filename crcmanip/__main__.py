@@ -10,6 +10,17 @@ from crcmanip.crc import BaseCRC
 CRC_FACTORY = {cls.__name__: cls() for cls in BaseCRC.__subclasses__()}
 
 
+class DictAction(argparse.Action):
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: T.Any,
+        option_string: T.Optional[str] = None,
+    ) -> None:
+        setattr(namespace, self.dest, self.choices.get(values, self.default))
+
+
 class BaseCommand:
     names: T.List[str] = NotImplemented
     description: str = NotImplemented
@@ -31,7 +42,7 @@ class CalcCommand(BaseCommand):
         )
 
     def run(self, args: argparse.Namespace) -> None:
-        crc = CRC_FACTORY[args.algorithm]
+        crc = args.algorithm
         with args.path.open("rb") as handle:
             consume(crc, handle)
         print(crc.hex_digest())
@@ -82,7 +93,7 @@ class PatchCommand(BaseCommand):
         )
 
     def run(self, args: argparse.Namespace) -> None:
-        crc = CRC_FACTORY[args.algorithm]
+        crc = args.algorithm
         input_path = args.input_path
         output_path = (
             args.output_path
@@ -131,8 +142,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-a",
         "--algorithm",
-        choices=list(CRC_FACTORY.keys()),
-        default=list(CRC_FACTORY.keys())[0],
+        action=DictAction,
+        choices=CRC_FACTORY,
+        default=CRC_FACTORY[list(CRC_FACTORY.keys())[0]],
     )
 
     subparsers = parser.add_subparsers(dest="command")
