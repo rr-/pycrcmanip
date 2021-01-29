@@ -3,7 +3,7 @@ import typing as T
 
 import pytest
 
-from crcmanip.algorithm import apply_patch, consume, consume_reverse
+from crcmanip.algorithm import consume
 from crcmanip.crc import CRC32
 
 

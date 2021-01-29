@@ -1,6 +1,6 @@
 import typing as T
 
-from crcmanip.fastcrc import crc_next
+from crcmanip.fastcrc import crc_next, crc_prev
 from crcmanip.utils import get_polynomial_reverse, swap_endian
 
 
@@ -89,7 +89,14 @@ class BaseCRC:
         self._consumed = 0
 
     def update(self, source: bytes) -> "BaseCRC":
-        self._value = self._update(source, self._value) & (
+        self._value = self.get_next_value(source, self._value) & (
+            (1 << self.num_bits) - 1
+        )
+        self._consumed += len(source)
+        return self
+
+    def update_reverse(self, source: bytes) -> "BaseCRC":
+        self._value = self.get_prev_value(source, self._value) & (
             (1 << self.num_bits) - 1
         )
         self._consumed += len(source)
@@ -104,7 +111,7 @@ class BaseCRC:
             while tmp:
                 patch.append(tmp & 0xFF)
                 tmp >>= 8
-            value = self._update(bytes(patch), value)
+            value = self.get_next_value(bytes(patch), value)
 
         value ^= self.final_xor
         value &= (1 << self.num_bits) - 1
@@ -113,8 +120,11 @@ class BaseCRC:
     def hex_digest(self) -> str:
         return "%0*X" % (self.num_bytes * 2, self.digest())
 
-    def _update(self, source: bytes, value: int) -> int:
-        return crc_next(self, source, value)
+    def get_prev_value(self, source: bytes, value: int) -> int:
+        return T.cast(int, crc_prev(self, source, value))
+
+    def get_next_value(self, source: bytes, value: int) -> int:
+        return T.cast(int, crc_next(self, source, value))
 
 
 class CRC32(BaseCRC):
