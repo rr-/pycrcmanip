@@ -144,10 +144,10 @@ def apply_patch(
 
     # output first half
     while pos < target_pos:
-        chunk_size = min(chunk_size, target_pos - input_handle.tell())
-        chunk = input_handle.read(chunk_size)
+        cur_chunk_size = min(chunk_size, target_pos - input_handle.tell())
+        chunk = input_handle.read(cur_chunk_size)
         output_handle.write(chunk)
-        pos += chunk_size
+        pos += cur_chunk_size
 
     # output patch
     output_handle.write(num_to_bytes(patch, crc.num_bytes))
@@ -157,7 +157,7 @@ def apply_patch(
 
     # output second half
     while pos < end_pos:
-        chunk_size = min(chunk_size, end_pos - input_handle.tell())
-        chunk = input_handle.read(chunk_size)
+        cur_chunk_size = min(chunk_size, end_pos - input_handle.tell())
+        chunk = input_handle.read(cur_chunk_size)
         output_handle.write(chunk)
-        pos += chunk_size
+        pos += cur_chunk_size
