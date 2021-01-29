@@ -1,8 +1,9 @@
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
 static PyObject *CrcNext(PyObject *self, PyObject *args) {
     char *str = NULL;
-    size_t strsize = 0;
+    Py_ssize_t strsize = 0;
     uint32_t value = 0;
     PyObject *crc;
 
@@ -10,10 +11,10 @@ static PyObject *CrcNext(PyObject *self, PyObject *args) {
         return NULL;
     }
 
-    const size_t num_bytes = PyLong_AsLong(
+    const int num_bytes = PyLong_AsLong(
         PyObject_GetAttrString(crc, "num_bytes")
     );
-    const size_t num_bits = PyLong_AsLong(
+    const int num_bits = PyLong_AsLong(
         PyObject_GetAttrString(crc, "num_bits")
     );
     const int big_endian = PyObject_IsTrue(
@@ -46,7 +47,7 @@ static PyObject *CrcNext(PyObject *self, PyObject *args) {
 
 static PyObject *CrcPrev(PyObject *self, PyObject *args) {
     char *str = NULL;
-    size_t strsize = 0;
+    Py_ssize_t strsize = 0;
     uint32_t value = 0;
     PyObject *crc;
 
@@ -54,10 +55,10 @@ static PyObject *CrcPrev(PyObject *self, PyObject *args) {
         return NULL;
     }
 
-    const size_t num_bytes = PyLong_AsLong(
+    const int num_bytes = PyLong_AsLong(
         PyObject_GetAttrString(crc, "num_bytes")
     );
-    const size_t num_bits = PyLong_AsLong(
+    const int num_bits = PyLong_AsLong(
         PyObject_GetAttrString(crc, "num_bits")
     );
     const int big_endian = PyObject_IsTrue(
