@@ -11,16 +11,18 @@ from crcmanip.crc import CRC16IBM, CRC32, BaseCRC
 @pytest.mark.parametrize("crc_cls", BaseCRC.__subclasses__())
 @pytest.mark.parametrize("start_pos", [None, 1, 2, 8, 9])
 @pytest.mark.parametrize("end_pos", [None, 1, 2, 8, 9])
+@pytest.mark.parametrize("chunk_size", [1, 2, 8, 9, 100])
 def test_consume(
     crc_cls: T.Type[BaseCRC],
     start_pos: T.Optional[int],
     end_pos: T.Optional[int],
+    chunk_size: int,
 ) -> None:
     test_string = b"123456789"
     crc = crc_cls()
     with io.BytesIO() as handle:
         handle.write(test_string)
-        consume(crc, handle, start_pos, end_pos)
+        consume(crc, handle, start_pos, end_pos, chunk_size=chunk_size)
 
         if (
             start_pos is not None
@@ -38,16 +40,18 @@ def test_consume(
 @pytest.mark.parametrize("crc_cls", BaseCRC.__subclasses__())
 @pytest.mark.parametrize("start_pos", [None, 1, 2, 8, 9])
 @pytest.mark.parametrize("end_pos", [None, 1, 2, 8, 9])
+@pytest.mark.parametrize("chunk_size", [1, 2, 8, 9, 100])
 def test_consume_reverse(
     crc_cls: T.Type[BaseCRC],
     start_pos: T.Optional[int],
     end_pos: T.Optional[int],
+    chunk_size: int,
 ) -> None:
     test_string = b"123456789"
     crc = crc_cls()
     with io.BytesIO() as handle:
         handle.write(test_string)
-        consume_reverse(crc, handle, start_pos, end_pos)
+        consume_reverse(crc, handle, start_pos, end_pos, chunk_size=chunk_size)
 
         if (
             start_pos is not None

@@ -37,15 +37,13 @@ def consume(
     if start_pos == end_pos:
         return
 
-    handle.seek(start_pos or 0, io.SEEK_SET)
-    while True:
-        if handle.tell() >= end_pos:
-            break
-        chunk_size = min(chunk_size, end_pos - handle.tell())
+    handle.seek(start_pos, io.SEEK_SET)
+    remaining = end_pos - start_pos
+    while remaining:
+        chunk_size = min(chunk_size, remaining)
         chunk = handle.read(chunk_size)
-        if not chunk:
-            break
         crc.update(chunk)
+        remaining -= chunk_size
 
 
 def consume_reverse(
@@ -59,19 +57,13 @@ def consume_reverse(
     if start_pos == end_pos:
         return
 
-    pos = end_pos
-    consumed = 0
-    while consumed < end_pos - start_pos:
-        pos -= chunk_size
-        if pos < start_pos:
-            pos = start_pos
-            chunk_size = pos + chunk_size - start_pos
-            if pos + chunk_size > end_pos:
-                chunk_size = end_pos - pos
-        handle.seek(pos, io.SEEK_SET)
+    remaining = end_pos - start_pos
+    while remaining:
+        chunk_size = min(chunk_size, remaining)
+        handle.seek(start_pos + remaining - chunk_size, io.SEEK_SET)
         chunk = handle.read(chunk_size)
         crc.update_reverse(chunk)
-        consumed += len(chunk)
+        remaining -= chunk_size
 
 
 def compute_patch(
