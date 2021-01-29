@@ -63,31 +63,26 @@ def compute_reverse_lookup_table(
 
 
 class BaseCRC:
-    def __init__(
-        self,
-        num_bits: int,
-        polynomial: int,
-        initial_xor: int = 0,
-        final_xor: int = 0,
-        big_endian: bool = False,
-        use_file_size: bool = False,
-    ) -> None:
-        self.polynomial = polynomial
-        self.polynomial_reverse = get_polynomial_reverse(polynomial, num_bits)
-        self.initial_xor = initial_xor
-        self.final_xor = final_xor
-        self.big_endian = big_endian
-        self.use_file_size = use_file_size
+    num_bits: int = NotImplemented
+    polynomial: int = NotImplemented
+    initial_xor: int = 0
+    final_xor: int = 0
+    big_endian: bool = False
+    use_file_size: bool = False
 
-        self.num_bits = num_bits
-        assert num_bits % 8 == 0
-        self.num_bytes = num_bits // 8
+    def __init__(self) -> None:
+        self.polynomial_reverse = get_polynomial_reverse(
+            self.polynomial, self.num_bits
+        )
+
+        assert self.num_bits % 8 == 0
+        self.num_bytes = self.num_bits // 8
 
         self.lookup_table = compute_lookup_table(
-            polynomial, num_bits, big_endian
+            self.polynomial, self.num_bits, self.big_endian
         )
         self.lookup_table_reverse = compute_reverse_lookup_table(
-            polynomial, num_bits, big_endian
+            self.polynomial, self.num_bits, self.big_endian
         )
 
         self._value = self.initial_xor
@@ -123,36 +118,31 @@ class BaseCRC:
 
 
 class CRC32(BaseCRC):
-    def __init__(self) -> None:
-        super().__init__(
-            num_bits=32,
-            polynomial=0x04C11DB7,
-            initial_xor=0xFFFFFFFF,
-            final_xor=0xFFFFFFFF,
-        )
+    num_bits = 32
+    polynomial = 0x04C11DB7
+    initial_xor = 0xFFFFFFFF
+    final_xor = 0xFFFFFFFF
 
 
 class CRC32POSIX(BaseCRC):
-    def __init__(self) -> None:
-        super().__init__(
-            num_bits=32,
-            polynomial=0x04C11DB7,
-            final_xor=0xFFFFFFFF,
-            big_endian=True,
-            use_file_size=True,
-        )
+    num_bits = 32
+    polynomial = 0x04C11DB7
+    final_xor = 0xFFFFFFFF
+    big_endian = True
+    use_file_size = True
 
 
 class CRC16CCITT(BaseCRC):
-    def __init__(self) -> None:
-        super().__init__(num_bits=16, polynomial=0x1021)
+    num_bits = 16
+    polynomial = 0x1021
 
 
 class CRC16XMODEM(BaseCRC):
-    def __init__(self) -> None:
-        super().__init__(num_bits=16, polynomial=0x1021, big_endian=True)
+    num_bits = 16
+    polynomial = 0x1021
+    big_endian = True
 
 
 class CRC16IBM(BaseCRC):
-    def __init__(self) -> None:
-        super().__init__(num_bits=16, polynomial=0x8005)
+    num_bits = 16
+    polynomial = 0x8005
