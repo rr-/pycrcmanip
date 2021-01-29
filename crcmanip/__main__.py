@@ -2,8 +2,8 @@ import argparse
 import sys
 from pathlib import Path
 
-from crcmanip.utils import compute_checksum
 from crcmanip.crc import BaseCRC
+from crcmanip.algorithm import consume
 
 CRC_FACTORY = {cls.__name__: cls() for cls in BaseCRC.__subclasses__()}
 
@@ -25,7 +25,7 @@ def main() -> None:
     crc = CRC_FACTORY[args.algorithm]
 
     with args.path.open("rb") as handle:
-        compute_checksum(crc, handle, 0, None)
+        consume(crc, handle)
 
     print(crc.hex_digest())
 
