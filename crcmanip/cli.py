@@ -5,6 +5,7 @@ from pathlib import Path
 
 from crcmanip.algorithm import apply_patch, consume
 from crcmanip.crc import BaseCRC
+from crcmanip.utils import disable_progressbars
 
 CRC_FACTORY = {cls.__name__: cls() for cls in BaseCRC.__subclasses__()}
 
@@ -146,6 +147,9 @@ def parse_args(args: T.Optional[T.List[str]] = None) -> argparse.Namespace:
         choices=CRC_FACTORY,
         default=CRC_FACTORY[list(CRC_FACTORY.keys())[0]],
     )
+    parser.add_argument(
+        "-q", "--quiet", help="disable progressbars", action="store_true"
+    )
 
     subparsers = parser.add_subparsers(dest="command")
     for command_cls in BaseCommand.__subclasses__():
@@ -163,4 +167,6 @@ def parse_args(args: T.Optional[T.List[str]] = None) -> argparse.Namespace:
 
 def main(args: T.Optional[T.List[str]] = None) -> None:
     parsed_args = parse_args(args)
+    if parsed_args.quiet:
+        disable_progressbars()
     parsed_args.command_cls.run(parsed_args)

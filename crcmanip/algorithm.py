@@ -2,7 +2,7 @@ import io
 import typing as T
 
 from crcmanip.crc import BaseCRC
-from crcmanip.utils import num_to_bytes, swap_endian
+from crcmanip.utils import num_to_bytes, swap_endian, track_progress
 
 DEFAULT_CHUNK_SIZE = 1024 * 1024
 
@@ -39,16 +39,18 @@ def consume(
     chunk_size: int = DEFAULT_CHUNK_SIZE,
 ) -> None:
     start_pos, end_pos = fix_start_end_pos(start_pos, end_pos, handle)
-    if start_pos == end_pos:
+    remaining = end_pos - start_pos
+    if not remaining:
         return
 
-    handle.seek(start_pos, io.SEEK_SET)
-    remaining = end_pos - start_pos
-    while remaining:
-        chunk_size = min(chunk_size, remaining)
-        chunk = handle.read(chunk_size)
-        crc.update(chunk)
-        remaining -= chunk_size
+    with track_progress(desc="checksum", total=remaining) as progress:
+        handle.seek(start_pos, io.SEEK_SET)
+        while remaining:
+            chunk_size = min(chunk_size, remaining)
+            chunk = handle.read(chunk_size)
+            crc.update(chunk)
+            remaining -= chunk_size
+            progress.update(chunk_size)
 
 
 def consume_reverse(
@@ -59,16 +61,18 @@ def consume_reverse(
     chunk_size: int = DEFAULT_CHUNK_SIZE,
 ) -> None:
     start_pos, end_pos = fix_start_end_pos(start_pos, end_pos, handle)
-    if start_pos == end_pos:
+    remaining = end_pos - start_pos
+    if not remaining:
         return
 
-    remaining = end_pos - start_pos
-    while remaining:
-        chunk_size = min(chunk_size, remaining)
-        handle.seek(start_pos + remaining - chunk_size, io.SEEK_SET)
-        chunk = handle.read(chunk_size)
-        crc.update_reverse(chunk)
-        remaining -= chunk_size
+    with track_progress(desc="checksum 2", total=remaining) as progress:
+        while remaining:
+            chunk_size = min(chunk_size, remaining)
+            handle.seek(start_pos + remaining - chunk_size, io.SEEK_SET)
+            chunk = handle.read(chunk_size)
+            crc.update_reverse(chunk)
+            remaining -= chunk_size
+            progress.update(chunk_size)
 
 
 def compute_patch(
@@ -143,21 +147,24 @@ def apply_patch(
         raise InvalidPositionError
 
     # output first half
-    while pos < target_pos:
-        cur_chunk_size = min(chunk_size, target_pos - input_handle.tell())
-        chunk = input_handle.read(cur_chunk_size)
-        output_handle.write(chunk)
-        pos += cur_chunk_size
+    with track_progress(desc="output", total=end_pos) as progress:
+        while pos < target_pos:
+            cur_chunk_size = min(chunk_size, target_pos - input_handle.tell())
+            chunk = input_handle.read(cur_chunk_size)
+            output_handle.write(chunk)
+            pos += cur_chunk_size
+            progress.update(cur_chunk_size)
 
-    # output patch
-    output_handle.write(num_to_bytes(patch, crc.num_bytes))
-    if overwrite:
-        pos += crc.num_bytes
-        input_handle.seek(pos, io.SEEK_SET)
+        # output patch
+        output_handle.write(num_to_bytes(patch, crc.num_bytes))
+        if overwrite:
+            pos += crc.num_bytes
+            input_handle.seek(pos, io.SEEK_SET)
 
-    # output second half
-    while pos < end_pos:
-        cur_chunk_size = min(chunk_size, end_pos - input_handle.tell())
-        chunk = input_handle.read(cur_chunk_size)
-        output_handle.write(chunk)
-        pos += cur_chunk_size
+        # output second half
+        while pos < end_pos:
+            cur_chunk_size = min(chunk_size, end_pos - input_handle.tell())
+            chunk = input_handle.read(cur_chunk_size)
+            output_handle.write(chunk)
+            pos += cur_chunk_size
+            progress.update(cur_chunk_size)

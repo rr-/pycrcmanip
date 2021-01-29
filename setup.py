@@ -12,6 +12,7 @@ def main():
             "console_scripts": ["crcmanip = crcmanip.__main__:main"]
         },
         ext_modules=[Extension("crcmanip.fastcrc", ["crcmanip/fastcrc.c"])],
+        install_requires=["tqdm"],
         tests_require=["pytest"],
     )
 
