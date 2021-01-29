@@ -5,7 +5,7 @@ import typing as T
 import pytest
 
 from crcmanip.algorithm import apply_patch, consume, consume_reverse
-from crcmanip.crc import CRC16IBM, CRC32, BaseCRC
+from crcmanip.crc import BaseCRC
 
 
 @pytest.mark.parametrize("crc_cls", BaseCRC.__subclasses__())
@@ -24,11 +24,7 @@ def test_consume(
         handle.write(test_string)
         consume(crc, handle, start_pos, end_pos, chunk_size=chunk_size)
 
-        if (
-            start_pos is not None
-            and end_pos is not None
-            and start_pos > end_pos
-        ):
+        if start_pos and end_pos and start_pos > end_pos:
             start_pos, end_pos = end_pos, start_pos
         expected_digest = (
             crc_cls().update(test_string[start_pos:end_pos]).digest()
@@ -53,11 +49,7 @@ def test_consume_reverse(
         handle.write(test_string)
         consume_reverse(crc, handle, start_pos, end_pos, chunk_size=chunk_size)
 
-        if (
-            start_pos is not None
-            and end_pos is not None
-            and start_pos > end_pos
-        ):
+        if start_pos and end_pos and start_pos > end_pos:
             start_pos, end_pos = end_pos, start_pos
         expected_digest = (
             crc.reset().update_reverse(test_string[start_pos:end_pos]).digest()

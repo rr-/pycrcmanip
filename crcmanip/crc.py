@@ -4,60 +4,46 @@ from crcmanip.fastcrc import crc_next, crc_prev
 from crcmanip.utils import get_polynomial_reverse, swap_endian
 
 
-def compute_lookup_table(
-    polynomial: int, num_bits: int, big_endian: bool
+def create_lookup_table(
+    poly: int, num_bits: int, big_endian: bool
 ) -> T.Tuple[int, ...]:
-    polynomial_reverse = get_polynomial_reverse(polynomial, num_bits)
+    poly_rev = get_polynomial_reverse(poly, num_bits)
     mask = 1 << (num_bits - 1)
     table = [0] * 0x100
 
     for num in range(0x100):
-        value = num
+        val = num
         if big_endian:
-            value = swap_endian(value, num_bits)
+            val = swap_endian(val, num_bits)
         for _bit in range(8):
             if big_endian:
-                value = (
-                    (value << 1) ^ polynomial if value & mask else (value << 1)
-                )
+                val = (val << 1) ^ poly if val & mask else (val << 1)
             else:
-                value = (
-                    (value >> 1) ^ polynomial_reverse
-                    if value & 1
-                    else (value >> 1)
-                )
-        table[num] = value & ((1 << num_bits) - 1)
+                val = (val >> 1) ^ poly_rev if val & 1 else (val >> 1)
+        table[num] = val & ((1 << num_bits) - 1)
 
     return tuple(table)
 
 
-def compute_reverse_lookup_table(
-    polynomial: int, num_bits: int, big_endian: bool
+def create_reverse_lookup_table(
+    poly: int, num_bits: int, big_endian: bool
 ) -> T.Tuple[int, ...]:
-    polynomial_reverse = get_polynomial_reverse(polynomial, num_bits)
+    poly_rev = get_polynomial_reverse(poly, num_bits)
     mask = 1 << (num_bits - 1)
     table = [0] * 0x100
 
     for num in range(0x100):
-        value = num
+        val = num
         if not big_endian:
-            value = swap_endian(value, num_bits)
+            val = swap_endian(val, num_bits)
         for _bit in range(8):
             if big_endian:
-                value = (
-                    ((value ^ polynomial) >> 1) | mask
-                    if value & 1
-                    else (value >> 1)
-                )
+                val = ((val ^ poly) >> 1) | mask if val & 1 else (val >> 1)
             else:
-                value = (
-                    ((value ^ polynomial_reverse) << 1) | 1
-                    if value & mask
-                    else (value << 1)
-                )
+                val = ((val ^ poly_rev) << 1) | 1 if val & mask else (val << 1)
         if big_endian:
-            value ^= swap_endian(num, num_bits)
-        table[num] = value & ((1 << num_bits) - 1)
+            val ^= swap_endian(num, num_bits)
+        table[num] = val & ((1 << num_bits) - 1)
 
     return tuple(table)
 
@@ -71,17 +57,13 @@ class BaseCRC:
     use_file_size: bool = False
 
     def __init__(self) -> None:
-        self.polynomial_reverse = get_polynomial_reverse(
-            self.polynomial, self.num_bits
-        )
-
         assert self.num_bits % 8 == 0
         self.num_bytes = self.num_bits // 8
 
-        self.lookup_table = compute_lookup_table(
+        self.lookup_table = create_lookup_table(
             self.polynomial, self.num_bits, self.big_endian
         )
-        self.lookup_table_reverse = compute_reverse_lookup_table(
+        self.lookup_table_reverse = create_reverse_lookup_table(
             self.polynomial, self.num_bits, self.big_endian
         )
 
