@@ -3,28 +3,34 @@ import typing as T
 from pathlib import Path
 
 import pytest
+from click.testing import CliRunner
 
-from crcmanip.cli import main
+from crcmanip.cli import calc, patch
 
 
-def test_calc_command(tmp_path: Path, capsys) -> None:
+@pytest.fixture(scope="module")
+def runner() -> CliRunner:
+    return CliRunner()
+
+
+def test_calc_command(tmp_path: Path, runner: CliRunner) -> None:
     input_path = tmp_path / "file.txt"
     input_path.write_text("hello")
 
-    main(["calc", str(input_path)])
-    captured = capsys.readouterr()
+    result = runner.invoke(calc, [str(input_path)])
 
-    assert captured.out == "3610A686\n"
+    assert result.exit_code == 0
+    assert result.output == "3610A686\n"
 
 
-def test_calc_command_different_alg(tmp_path: Path, capsys) -> None:
+def test_calc_command_different_alg(tmp_path: Path, runner: CliRunner) -> None:
     input_path = tmp_path / "file.txt"
     input_path.write_text("hello")
 
-    main(["-a", "CRC16IBM", "calc", str(input_path)])
-    captured = capsys.readouterr()
+    result = runner.invoke(calc, ["-a", "CRC16IBM", str(input_path)])
 
-    assert captured.out == "34D2\n"
+    assert result.exit_code == 0
+    assert result.output == "34D2\n"
 
 
 @pytest.mark.parametrize(
@@ -49,53 +55,70 @@ def test_calc_command_different_alg(tmp_path: Path, capsys) -> None:
     ],
 )
 def test_patch_command(
-    tmp_path: Path, extra_args: T.List[str], expected_output: bytes
+    tmp_path: Path,
+    extra_args: T.List[str],
+    expected_output: bytes,
+    runner: CliRunner,
 ) -> None:
     input_path = tmp_path / "file.txt"
     input_path.write_text("hello")
 
-    main(["patch", str(input_path), "DEADBEEF", *extra_args])
+    result = runner.invoke(patch, [str(input_path), "DEADBEEF", *extra_args])
 
+    assert result.exit_code == 0
+    assert result.output == ""
     assert input_path.read_bytes() == expected_output
 
 
-def test_patch_command_different_alg(tmp_path: Path) -> None:
+def test_patch_command_different_alg(
+    tmp_path: Path, runner: CliRunner
+) -> None:
     input_path = tmp_path / "file.txt"
     input_path.write_text("hello")
 
-    main(["-a", "CRC16IBM", "patch", str(input_path), "DEADBEEF"])
+    result = runner.invoke(patch, ["-a", "CRC16IBM", str(input_path), "BEEF"])
 
+    assert result.exit_code == 0
+    assert result.output == ""
     assert input_path.read_bytes() == b"hello\xBA\x9D"
 
 
-def test_patch_command_invalid_pos(tmp_path: Path) -> None:
+def test_patch_command_invalid_pos(tmp_path: Path, runner: CliRunner) -> None:
     input_path = tmp_path / "file.txt"
     input_path.write_text("123")
 
-    with pytest.raises(ValueError):
-        main(["patch", str(input_path), "DEADBEEF", "-P", "6"])
+    result = runner.invoke(patch, [str(input_path), "DEADBEEF", "-P", "6"])
+    assert result.exit_code == 1
 
-    main(["patch", str(input_path), "DEADBEEF", "-O"])
+    result = runner.invoke(patch, [str(input_path), "DEADBEEF", "-O"])
+    assert result.exit_code == 0
+    assert result.output == ""
     assert input_path.read_bytes() == b"\xC3\xD8\x24\x06"
 
 
-def test_patch_command_output_file(tmp_path: Path) -> None:
+def test_patch_command_output_file(tmp_path: Path, runner: CliRunner) -> None:
     input_path = tmp_path / "input.txt"
     input_path.write_text("hello")
     output_path = tmp_path / "output.txt"
 
-    main(["patch", str(input_path), "DEADBEEF", "-o", str(output_path)])
+    result = runner.invoke(
+        patch, [str(input_path), "DEADBEEF", "-o", str(output_path)]
+    )
 
+    assert result.exit_code == 0
+    assert result.output == ""
     assert input_path.read_bytes() == b"hello"
     assert output_path.read_bytes() == b"hello\x45\x7E\x34\x30"
 
 
-def test_patch_command_backup(tmp_path: Path) -> None:
+def test_patch_command_backup(tmp_path: Path, runner: CliRunner) -> None:
     input_path = tmp_path / "input.txt"
     input_path.write_text("hello")
     backup_path = tmp_path / "input.txt.bak"
 
-    main(["patch", str(input_path), "DEADBEEF", "-b"])
+    result = runner.invoke(patch, [str(input_path), "DEADBEEF", "-b"])
 
+    assert result.exit_code == 0
+    assert result.output == ""
     assert input_path.read_bytes() == b"hello\x45\x7E\x34\x30"
     assert backup_path.read_bytes() == b"hello"

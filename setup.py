@@ -8,11 +8,9 @@ def main():
         description="CRC manipulator",
         author="rr-",
         author_email="rr-@sakuya.pl",
-        entry_points={
-            "console_scripts": ["crcmanip = crcmanip.__main__:main"]
-        },
+        entry_points={"console_scripts": ["crcmanip = crcmanip.__main__:cli"]},
         ext_modules=[Extension("crcmanip.fastcrc", ["crcmanip/fastcrc.c"])],
-        install_requires=["tqdm"],
+        install_requires=["tqdm", "click"],
         tests_require=["pytest"],
     )
 
