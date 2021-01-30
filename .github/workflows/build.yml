@@ -1,10 +1,10 @@
-name: crcmanip
+name: build
 
 on: [push, pull_request]
 
 jobs:
-  test:
-    name: Test code
+  build:
+    name: Build
     runs-on: ubuntu-latest
     strategy:
       matrix:

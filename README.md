@@ -1,4 +1,4 @@
-crcmanip
+crcmanip ![build](https://github.com/rr-/pycrcmanip/workflows/build/badge.svg)
 ========
 
 A command line interface tool that lets you reverse and freely change CRC
