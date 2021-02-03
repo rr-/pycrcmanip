@@ -18,7 +18,7 @@ class PathPath(click.Path):
         return Path(super().convert(value, param, ctx))
 
 
-@click.group()
+@click.group(context_settings={"help_option_names": ["-h", "--help"]})
 def cli() -> None:
     pass
 
