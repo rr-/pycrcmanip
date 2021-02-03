@@ -37,6 +37,7 @@ def calc(algorithm: str, quiet: bool, path: Path) -> None:
     """Print the checksum of a given PATH to the standard output."""
     if quiet:
         disable_progressbars()
+
     crc = CRC_FACTORY[algorithm]
     with path.open("rb") as handle:
         consume(crc, handle)
@@ -94,6 +95,9 @@ def patch(
 
     TARGET_CHECKSUM must be a valid hexadecimal value.
     """
+    if quiet:
+        disable_progressbars()
+
     crc = CRC_FACTORY[algorithm]
     output_path_provided = output_path is not None
     if not output_path_provided:

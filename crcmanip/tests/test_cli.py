@@ -1,6 +1,7 @@
 import argparse
 import typing as T
 from pathlib import Path
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -21,6 +22,18 @@ def test_calc_command(tmp_path: Path, runner: CliRunner) -> None:
 
     assert result.exit_code == 0
     assert result.output == "3610A686\n"
+
+
+def test_calc_command_quiet(tmp_path: Path, runner: CliRunner) -> None:
+    input_path = tmp_path / "file.txt"
+    input_path.write_text("hello")
+
+    with mock.patch(
+        "crcmanip.cli.disable_progressbars"
+    ) as mock_disable_progressbars:
+        runner.invoke(calc, [str(input_path), "-q"])
+
+    mock_disable_progressbars.assert_called_once()
 
 
 def test_calc_command_different_alg(tmp_path: Path, runner: CliRunner) -> None:
@@ -68,6 +81,18 @@ def test_patch_command(
     assert result.exit_code == 0
     assert result.output == ""
     assert input_path.read_bytes() == expected_output
+
+
+def test_patch_command_quiet(tmp_path: Path, runner: CliRunner) -> None:
+    input_path = tmp_path / "file.txt"
+    input_path.write_text("hello")
+
+    with mock.patch(
+        "crcmanip.cli.disable_progressbars"
+    ) as mock_disable_progressbars:
+        result = runner.invoke(patch, [str(input_path), "DEADBEEF", "-q"])
+
+    mock_disable_progressbars.assert_called_once()
 
 
 def test_patch_command_different_alg(
