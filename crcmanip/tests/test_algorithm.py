@@ -4,7 +4,13 @@ import typing as T
 
 import pytest
 
-from crcmanip.algorithm import apply_patch, consume, consume_reverse
+from crcmanip.algorithm import (
+    InvalidPositionError,
+    apply_patch,
+    compute_patch,
+    consume,
+    consume_reverse,
+)
 from crcmanip.crc import BaseCRC
 
 
@@ -121,3 +127,25 @@ def test_apply_patch_output(
         actual_output = output_handle.read()
 
         assert re.match(expected_output_re, actual_output, flags=re.DOTALL)
+
+
+def test_compute_patch_invalid_pos(any_crc: BaseCRC) -> None:
+    with io.BytesIO() as handle:
+        handle.write(b"123")
+        with pytest.raises(InvalidPositionError):
+            compute_patch(any_crc, handle, 0x00000000, -1, False)
+        with pytest.raises(InvalidPositionError):
+            compute_patch(any_crc, handle, 0x00000000, 4, False)
+
+
+def test_apply_patch_invalid_pos(any_crc: BaseCRC) -> None:
+    with io.BytesIO() as input_handle, io.BytesIO() as output_handle:
+        input_handle.write(b"123")
+        with pytest.raises(InvalidPositionError):
+            apply_patch(
+                any_crc, 0x00000000, input_handle, output_handle, -1, False
+            )
+        with pytest.raises(InvalidPositionError):
+            apply_patch(
+                any_crc, 0x00000000, input_handle, output_handle, 4, False
+            )

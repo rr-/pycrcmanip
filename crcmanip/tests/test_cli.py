@@ -1,4 +1,3 @@
-import argparse
 import typing as T
 from pathlib import Path
 from unittest import mock
@@ -6,7 +5,7 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 
-from crcmanip.cli import calc, patch
+from crcmanip.cli import calc, cli, patch
 
 
 @pytest.fixture(scope="module")
@@ -14,33 +13,40 @@ def runner() -> CliRunner:
     return CliRunner()
 
 
-def test_calc_command(tmp_path: Path, runner: CliRunner) -> None:
-    input_path = tmp_path / "file.txt"
-    input_path.write_text("hello")
+@pytest.fixture
+def src_file(tmp_path: Path) -> Path:
+    ret = tmp_path / "file.txt"
+    ret.write_text("hello")
+    return ret
 
-    result = runner.invoke(calc, [str(input_path)])
+
+def test_cli_command(runner: CliRunner) -> None:
+    result = runner.invoke(cli, [])
+
+    assert result.exit_code == 0
+    assert "Usage: " in result.output
+
+    assert cli.callback() is None  # to boost the coverage
+
+
+def test_calc_command(src_file: Path, runner: CliRunner) -> None:
+    result = runner.invoke(calc, [str(src_file)])
 
     assert result.exit_code == 0
     assert result.output == "3610A686\n"
 
 
-def test_calc_command_quiet(tmp_path: Path, runner: CliRunner) -> None:
-    input_path = tmp_path / "file.txt"
-    input_path.write_text("hello")
-
+def test_calc_command_quiet(src_file: Path, runner: CliRunner) -> None:
     with mock.patch(
         "crcmanip.cli.disable_progressbars"
     ) as mock_disable_progressbars:
-        runner.invoke(calc, [str(input_path), "-q"])
+        runner.invoke(calc, [str(src_file), "-q"])
 
     mock_disable_progressbars.assert_called_once()
 
 
-def test_calc_command_different_alg(tmp_path: Path, runner: CliRunner) -> None:
-    input_path = tmp_path / "file.txt"
-    input_path.write_text("hello")
-
-    result = runner.invoke(calc, ["-a", "CRC16IBM", str(input_path)])
+def test_calc_command_different_alg(src_file: Path, runner: CliRunner) -> None:
+    result = runner.invoke(calc, ["-a", "CRC16IBM", str(src_file)])
 
     assert result.exit_code == 0
     assert result.output == "34D2\n"
@@ -68,82 +74,68 @@ def test_calc_command_different_alg(tmp_path: Path, runner: CliRunner) -> None:
     ],
 )
 def test_patch_command(
-    tmp_path: Path,
+    src_file: Path,
     extra_args: T.List[str],
     expected_output: bytes,
     runner: CliRunner,
 ) -> None:
-    input_path = tmp_path / "file.txt"
-    input_path.write_text("hello")
-
-    result = runner.invoke(patch, [str(input_path), "DEADBEEF", *extra_args])
+    result = runner.invoke(patch, [str(src_file), "DEADBEEF", *extra_args])
 
     assert result.exit_code == 0
     assert result.output == ""
-    assert input_path.read_bytes() == expected_output
+    assert src_file.read_bytes() == expected_output
 
 
-def test_patch_command_quiet(tmp_path: Path, runner: CliRunner) -> None:
-    input_path = tmp_path / "file.txt"
-    input_path.write_text("hello")
-
+def test_patch_command_quiet(src_file: Path, runner: CliRunner) -> None:
     with mock.patch(
         "crcmanip.cli.disable_progressbars"
     ) as mock_disable_progressbars:
-        result = runner.invoke(patch, [str(input_path), "DEADBEEF", "-q"])
+        runner.invoke(patch, [str(src_file), "DEADBEEF", "-q"])
 
     mock_disable_progressbars.assert_called_once()
 
 
 def test_patch_command_different_alg(
-    tmp_path: Path, runner: CliRunner
+    src_file: Path, runner: CliRunner
 ) -> None:
-    input_path = tmp_path / "file.txt"
-    input_path.write_text("hello")
-
-    result = runner.invoke(patch, ["-a", "CRC16IBM", str(input_path), "BEEF"])
+    result = runner.invoke(patch, ["-a", "CRC16IBM", str(src_file), "BEEF"])
 
     assert result.exit_code == 0
     assert result.output == ""
-    assert input_path.read_bytes() == b"hello\xBA\x9D"
+    assert src_file.read_bytes() == b"hello\xBA\x9D"
 
 
-def test_patch_command_invalid_pos(tmp_path: Path, runner: CliRunner) -> None:
-    input_path = tmp_path / "file.txt"
-    input_path.write_text("123")
+def test_patch_command_invalid_pos(src_file: Path, runner: CliRunner) -> None:
+    src_file.write_text("123")
 
-    result = runner.invoke(patch, [str(input_path), "DEADBEEF", "-P", "6"])
+    result = runner.invoke(patch, [str(src_file), "DEADBEEF", "-P", "6"])
     assert result.exit_code == 1
 
-    result = runner.invoke(patch, [str(input_path), "DEADBEEF", "-O"])
+    result = runner.invoke(patch, [str(src_file), "DEADBEEF", "-O"])
     assert result.exit_code == 0
     assert result.output == ""
-    assert input_path.read_bytes() == b"\xC3\xD8\x24\x06"
+    assert src_file.read_bytes() == b"\xC3\xD8\x24\x06"
 
 
-def test_patch_command_output_file(tmp_path: Path, runner: CliRunner) -> None:
-    input_path = tmp_path / "input.txt"
-    input_path.write_text("hello")
-    output_path = tmp_path / "output.txt"
+def test_patch_command_dst_file(src_file: Path, runner: CliRunner) -> None:
+    dst_file = src_file.parent / "output.txt"
 
     result = runner.invoke(
-        patch, [str(input_path), "DEADBEEF", "-o", str(output_path)]
+        patch, [str(src_file), "DEADBEEF", "-o", str(dst_file)]
     )
 
     assert result.exit_code == 0
     assert result.output == ""
-    assert input_path.read_bytes() == b"hello"
-    assert output_path.read_bytes() == b"hello\x45\x7E\x34\x30"
+    assert src_file.read_bytes() == b"hello"
+    assert dst_file.read_bytes() == b"hello\x45\x7E\x34\x30"
 
 
-def test_patch_command_backup(tmp_path: Path, runner: CliRunner) -> None:
-    input_path = tmp_path / "input.txt"
-    input_path.write_text("hello")
-    backup_path = tmp_path / "input.txt.bak"
+def test_patch_command_backup(src_file: Path, runner: CliRunner) -> None:
+    backup_file = src_file.with_suffix(src_file.suffix + ".bak")
 
-    result = runner.invoke(patch, [str(input_path), "DEADBEEF", "-b"])
+    result = runner.invoke(patch, [str(src_file), "DEADBEEF", "-b"])
 
     assert result.exit_code == 0
     assert result.output == ""
-    assert input_path.read_bytes() == b"hello\x45\x7E\x34\x30"
-    assert backup_path.read_bytes() == b"hello"
+    assert src_file.read_bytes() == b"hello\x45\x7E\x34\x30"
+    assert backup_file.read_bytes() == b"hello"

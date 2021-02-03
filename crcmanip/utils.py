@@ -14,14 +14,14 @@ def get_polynomial_reverse(polynomial: int, num_bits: int) -> int:
     return result
 
 
-def swap_endian(crc: int, num_bits: int) -> int:
+def swap_endian(value: int, num_bits: int) -> int:
     result = 0
     assert num_bits % 8 == 0
     num_bytes = num_bits // 8
     for _i in range(num_bytes):
         result <<= 8
-        result |= crc & 0xFF
-        crc >>= 8
+        result |= value & 0xFF
+        value >>= 8
     return result
 
 

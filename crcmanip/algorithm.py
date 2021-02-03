@@ -134,17 +134,16 @@ def apply_patch(
     overwrite: bool,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
 ) -> None:
+    input_handle.seek(0, io.SEEK_END)
+    end_pos = input_handle.tell()
+    if target_pos < 0 or target_pos > end_pos:
+        raise InvalidPositionError
+
     patch = compute_patch(
         crc, input_handle, target_checksum, target_pos, overwrite=overwrite
     )
-
-    input_handle.seek(0, io.SEEK_END)
-    end_pos = input_handle.tell()
     input_handle.seek(0, io.SEEK_SET)
-    pos = input_handle.tell()
-
-    if target_pos < 0 or target_pos > end_pos:
-        raise InvalidPositionError
+    pos = 0
 
     # output first half
     with track_progress(desc="output", total=end_pos) as progress:

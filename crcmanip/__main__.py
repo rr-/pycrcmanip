@@ -1,4 +1,9 @@
 from crcmanip.cli import cli
 
-if __name__ == "__main__":
-    cli()
+
+def init() -> None:
+    if __name__ == "__main__":
+        cli()
+
+
+init()
