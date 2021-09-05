@@ -1,9 +1,11 @@
 import typing as T
+from functools import lru_cache
 
 from crcmanip.fastcrc import crc_next, crc_prev
 from crcmanip.utils import get_polynomial_reverse, swap_endian
 
 
+@lru_cache
 def create_lookup_table(
     poly: int, num_bits: int, big_endian: bool
 ) -> T.Tuple[int, ...]:
@@ -25,6 +27,7 @@ def create_lookup_table(
     return tuple(table)
 
 
+@lru_cache
 def create_reverse_lookup_table(
     poly: int, num_bits: int, big_endian: bool
 ) -> T.Tuple[int, ...]:

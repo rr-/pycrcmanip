@@ -26,16 +26,11 @@ def swap_endian(value: int, num_bits: int) -> int:
 
 
 def num_to_bytes(val: int, num_bytes: T.Optional[int] = None) -> bytes:
-    ret: T.List[int] = []
     if num_bytes:
-        for _i in range(num_bytes):
-            ret.append(val & 0xFF)
-            val >>= 8
-    else:
-        while val:
-            ret.append(val & 0xFF)
-            val >>= 8
-    return bytes(ret)
+        return (val & ((1 << (num_bytes << 3)) - 1)).to_bytes(
+            num_bytes, byteorder="little"
+        )
+    return val.to_bytes((val.bit_length() + 7) // 8, byteorder="little")
 
 
 def disable_progressbars() -> None:

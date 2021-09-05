@@ -30,16 +30,21 @@ static PyObject *CrcNext(PyObject *self, PyObject *args) {
     }
 
     const uint32_t mask = (1ull << num_bits) - 1ull;
-    for (int i = 0; i < strsize; i++) {
-        uint8_t c = *str++;
-        if (big_endian) {
-            uint8_t index = (value >> (num_bytes * 8 - 8)) ^ c;
+    int shift = (num_bytes << 3) - 8;
+    if (big_endian) {
+        for (int i = 0; i < strsize; i++) {
+            uint8_t c = *str++;
+            uint8_t index = c ^ (value >> shift);
             value = lookup_table[index] ^ (value << 8);
-        } else {
+            value &= mask;
+        }
+    } else {
+        for (int i = 0; i < strsize; i++) {
+            uint8_t c = *str++;
             uint8_t index = c ^ value;
             value = lookup_table[index] ^ (value >> 8);
+            value &= mask;
         }
-        value &= mask;
     }
 
     return PyLong_FromLong(value);
@@ -78,25 +83,28 @@ static PyObject *CrcPrev(PyObject *self, PyObject *args) {
     }
 
     const uint32_t mask = (1ull << num_bits) - 1ull;
-    str += strsize;
-    for (int i = 0; i < strsize; i++) {
-        uint8_t c = *--str;
-        if (big_endian) {
-            uint8_t index = value & 0xFF;
+    str += strsize - 1;
+    int shift = (num_bytes << 3) - 8;
+    if (big_endian) {
+        for (int i = 0; i < strsize; i++) {
+            uint8_t c = *str--;
+            uint8_t index = value;
             value = (
-                (c << (num_bytes * 8 - 8))
+                (c << shift)
                 ^ lookup_table_reverse[index]
-                ^ (value << (num_bytes * 8 - 8))
+                ^ (value << shift)
                 ^ (value >> 8)
-            ) & mask;
-        } else {
-            uint8_t index = value >> (num_bytes * 8 - 8);
-            value = (
-                (value << 8) ^ lookup_table_reverse[index] ^ c
-            ) & mask;
+            );
+            value &= mask;
+        }
+    } else {
+        for (int i = 0; i < strsize; i++) {
+            uint8_t c = *str--;
+            uint8_t index = value >> shift;
+            value = c ^ lookup_table_reverse[index] ^ (value << 8);
+            value &= mask;
         }
     }
-
     return PyLong_FromLong(value);
 }
 

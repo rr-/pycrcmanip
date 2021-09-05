@@ -1,5 +1,4 @@
 import io
-import re
 import typing as T
 
 import pytest
@@ -87,8 +86,7 @@ def test_apply_patch_digest(
             overwrite=overwrite,
         )
 
-        output_handle.seek(0)
-        actual_digest = crc_cls().update(output_handle.read()).digest()
+        actual_digest = crc_cls().update(output_handle.getvalue()).digest()
         assert actual_digest == test_digest
 
 
@@ -113,20 +111,15 @@ def test_apply_patch_output(
             overwrite=overwrite,
         )
 
-        expected_output_re = (
-            test_string[:target_pos]
-            + b"." * (crc_cls.num_bits // 8)
-            + test_string[
-                target_pos + crc_cls.num_bits // 8
-                if overwrite
-                else target_pos :
+        num_bytes = crc_cls.num_bits // 8
+        actual_output = output_handle.getvalue()
+        assert actual_output[:target_pos] == test_string[:target_pos]
+        assert (
+            actual_output[target_pos + num_bytes :]
+            == test_string[
+                target_pos + num_bytes if overwrite else target_pos :
             ]
         )
-
-        output_handle.seek(0, io.SEEK_SET)
-        actual_output = output_handle.read()
-
-        assert re.match(expected_output_re, actual_output, flags=re.DOTALL)
 
 
 def test_compute_patch_invalid_pos(any_crc: BaseCRC) -> None:
