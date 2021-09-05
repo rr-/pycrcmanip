@@ -1,0 +1,7 @@
+profile
+dist/
+build/
+/MANIFEST
+*.egg-info
+.pytest_cache/
+.mypy_cache/
