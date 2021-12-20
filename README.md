@@ -48,7 +48,7 @@ To install the newest version from GitHub:
 ```
 $ git clone https://github.com/rr-/pycrcmanip.git
 $ cd pycrcmanip
-$ pip install --user -e .
+$ pip install --user .
 $ crcmanip --help
 ```
 
@@ -56,4 +56,32 @@ $ crcmanip --help
 
 ```
 $ pytest
+```
+
+### Contributing
+
+To set up the project:
+```sh
+pip install --user poetry poethepoet
+
+git clone https://github.com/rr-/pycrcmanip.git
+cd pycrcmanip
+
+poetry install
+poetry run pre-commit install
+```
+
+To run tests:
+```
+poe test
+```
+
+To run the profiler:
+```
+poe profile
+```
+
+To clean build artifacts:
+```
+poe clean
 ```

@@ -1,7 +1,9 @@
 profile
-dist/
-build/
-/MANIFEST
+/dist
+/build
+/cython_build
 *.egg-info
 .pytest_cache/
 .mypy_cache/
+/workflow
+coverage.xml

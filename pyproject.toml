@@ -1,6 +1,67 @@
+[tool.poetry]
+name = "crcmanip"
+version = "1.0.0"
+description = "Manipulate CRC checksums."
+authors = ["Marcin Kurczewski <dash@wind.garden>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/rr-/pycrcmanip"
+classifiers = [
+    "Environment :: Other Environment",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Utilities",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+packages = [
+    { include = "crcmanip" }
+]
+include = ["crcmanip/**/*.so"]
+exclude = ["crcmanip/**/*.c"]
+
+[tool.poe.tasks]
+clean = "rm -rf build cython_build dist; rm **/*.so"
+lint = "pre-commit run -a"
+test = "pytest"
+cov = "pytest --cov=crcmanip --cov-report=term-missing"
+cov-ci = "pytest --cov=crcmanip --cov-report=xml"
+profile = """
+python3 -m cProfile -o profile -m pytest
+echo "import pstats;
+p = pstats.Stats('profile');
+p.sort_stats('cumtime');
+p.print_stats(500)"|python3
+"""
+
 [tool.black]
 line-length = 79
 
 [tool.isort]
 multi_line_output = 3
 include_trailing_comma = true
+
+[tool.poetry.build]
+script = "build.py"
+generate-setup-file = false
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+tqdm = "^4.62.3"
+click = "^8.0.3"
+
+[tool.poetry.dev-dependencies]
+poethepoet = "^0.11.0"
+pre-commit = "^2.16.0"
+pytest = "^6.2.5"
+pytest-coverage = "^0.0"
+Cython = "^0.29.26"
+setuptools = "^60.0.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "Cython>=0.29.26", "setuptools>=60.0.2"]
+build-backend = "poetry.core.masonry.api"
